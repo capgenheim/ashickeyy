@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class HeroBanner extends StatelessWidget {
-  const HeroBanner({super.key});
+  final VoidCallback? onStartReading;
+
+  const HeroBanner({super.key, this.onStartReading});
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +52,7 @@ class HeroBanner extends StatelessWidget {
               .fadeIn(duration: 600.ms),
           const SizedBox(height: 28),
           FilledButton(
-            onPressed: () {},
+            onPressed: onStartReading,
             style: FilledButton.styleFrom(
               backgroundColor: isDark ? colorScheme.primary : colorScheme.onSurface,
               foregroundColor: isDark ? colorScheme.onPrimary : colorScheme.surface,

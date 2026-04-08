@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'dart:math';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/api_service.dart';
 import '../models/post.dart';
@@ -158,7 +160,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   constraints: const BoxConstraints(maxWidth: 700),
                   child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: isDesktop ? 0 : 24),
-                    child: const HeroBanner(),
+                    child: HeroBanner(
+                      onStartReading: _posts.isNotEmpty
+                          ? () {
+                              final randomIndex = Random().nextInt(_posts.length);
+                              final randomPost = _posts[randomIndex];
+                              context.push('/post/${randomPost.slug}');
+                            }
+                          : null,
+                    ),
                   ),
                 ),
               ),
