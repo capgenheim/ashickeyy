@@ -1,0 +1,72 @@
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: ashickey-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_DB_NAME: ${MONGO_DB_NAME}
+      MONGO_DB_USER: ${MONGO_DB_USER}
+      MONGO_DB_PASSWORD: ${MONGO_DB_PASSWORD}
+    volumes:
+      - mongo-data:/data/db
+      - ./mongo/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - ashickey-internal
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    container_name: ashickey-admin
+    restart: unless-stopped
+    environment:
+      MONGODB_URI: mongodb://${MONGO_DB_USER}:${MONGO_DB_PASSWORD}@mongo:27017/${MONGO_DB_NAME}?authSource=${MONGO_DB_NAME}
+      APP_URL: http://localhost
+      APP_KEY: base64:aWg2cW96ZmZxbzBiaW12ZmtyeXBxczQzOGR4bzBycWo=
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    volumes:
+      - ./uploads:/app/public/uploads
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - ashickey-internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    container_name: ashickey-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./uploads:/usr/share/nginx/uploads:ro
+    depends_on:
+      admin:
+        condition: service_healthy
+    networks:
+      - ashickey-internal
+
+volumes:
+  mongo-data:
+    driver: local
+
+networks:
+  ashickey-internal:
+    driver: bridge
+    internal: false

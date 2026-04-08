@@ -1,0 +1,11 @@
+{
+  "name": "ashickey{}",
+  "short_name": "ashickey{}",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f5f5f7",
+  "theme_color": "#007AFF",
+  "description": "ashickey{} - Tech, Development & Current Issues Blog",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false
+}
