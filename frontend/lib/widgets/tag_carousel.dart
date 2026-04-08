@@ -1,38 +1,38 @@
 import 'package:flutter/material.dart';
-import '../models/category.dart';
+import '../models/tag.dart';
 import '../services/api_service.dart';
 
-class CategoryCarousel extends StatefulWidget {
+class TagCarousel extends StatefulWidget {
   final String? selectedSlug;
-  final ValueChanged<String?> onCategorySelected;
+  final ValueChanged<String?> onTagSelected;
 
-  const CategoryCarousel({
+  const TagCarousel({
     super.key,
     this.selectedSlug,
-    required this.onCategorySelected,
+    required this.onTagSelected,
   });
 
   @override
-  State<CategoryCarousel> createState() => _CategoryCarouselState();
+  State<TagCarousel> createState() => _TagCarouselState();
 }
 
-class _CategoryCarouselState extends State<CategoryCarousel> {
+class _TagCarouselState extends State<TagCarousel> {
   final ApiService _api = ApiService();
-  List<Category> _categories = [];
+  List<Tag> _tags = [];
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchCategories();
+    _fetchTags();
   }
 
-  Future<void> _fetchCategories() async {
+  Future<void> _fetchTags() async {
     try {
-      final categories = await _api.getCategories();
+      final tags = await _api.getTags();
       if (mounted) {
         setState(() {
-          _categories = categories;
+          _tags = tags;
           _loading = false;
         });
       }
@@ -47,7 +47,7 @@ class _CategoryCarouselState extends State<CategoryCarousel> {
       return const SizedBox(height: 40);
     }
 
-    if (_categories.isEmpty) return const SizedBox.shrink();
+    if (_tags.isEmpty) return const SizedBox.shrink();
 
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -55,23 +55,23 @@ class _CategoryCarouselState extends State<CategoryCarousel> {
       height: 40,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: _categories.length + 1,
+        itemCount: _tags.length + 1,
         separatorBuilder: (context, index) => const SizedBox(width: 4),
         itemBuilder: (context, index) {
           if (index == 0) {
             return _TabChip(
-              label: 'For you',
+              label: 'All topics',
               isSelected: widget.selectedSlug == null,
-              onTap: () => widget.onCategorySelected(null),
+              onTap: () => widget.onTagSelected(null),
               colorScheme: colorScheme,
             );
           }
 
-          final cat = _categories[index - 1];
+          final tag = _tags[index - 1];
           return _TabChip(
-            label: cat.name,
-            isSelected: widget.selectedSlug == cat.slug,
-            onTap: () => widget.onCategorySelected(cat.slug),
+            label: '#${tag.name}',
+            isSelected: widget.selectedSlug == tag.slug,
+            onTap: () => widget.onTagSelected(tag.slug),
             colorScheme: colorScheme,
           );
         },
@@ -113,10 +113,15 @@ class _TabChipState extends State<_TabChip> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             color: widget.isSelected
-                ? widget.colorScheme.onSurface
+                ? widget.colorScheme.primary
                 : _isHovered
                     ? widget.colorScheme.surfaceContainerHighest
                     : Colors.transparent,
+            border: Border.all(
+              color: widget.isSelected 
+                  ? widget.colorScheme.primary 
+                  : widget.colorScheme.outlineVariant.withValues(alpha: 0.5)
+            )
           ),
           child: Center(
             child: Text(
@@ -125,7 +130,7 @@ class _TabChipState extends State<_TabChip> {
                 fontSize: 13,
                 fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: widget.isSelected
-                    ? widget.colorScheme.surface
+                    ? widget.colorScheme.onPrimary
                     : widget.colorScheme.onSurfaceVariant,
               ),
             ),

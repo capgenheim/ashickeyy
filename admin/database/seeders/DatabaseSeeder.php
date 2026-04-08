@@ -29,7 +29,7 @@ class DatabaseSeeder extends Seeder
         Tag::truncate();
         Post::truncate();
 
-        // Base Category
+        // Base Category (Still created for backend fallback, but frontend won't use it)
         $cat = Category::firstOrCreate(['slug' => 'development'], ['name' => 'Development', 'description' => 'Dev tutorials for beginners']);
 
         // Tags
@@ -38,6 +38,9 @@ class DatabaseSeeder extends Seeder
             'Web Dev' => Tag::firstOrCreate(['slug' => 'web-dev'], ['name' => 'Web Dev']),
             'Frontend' => Tag::firstOrCreate(['slug' => 'frontend'], ['name' => 'Frontend']),
             'MOOC' => Tag::firstOrCreate(['slug' => 'mooc'], ['name' => 'MOOC']),
+            'Philosophy' => Tag::firstOrCreate(['slug' => 'philosophy'], ['name' => 'Philosophy']),
+            'Business' => Tag::firstOrCreate(['slug' => 'business'], ['name' => 'Business']),
+            'Management' => Tag::firstOrCreate(['slug' => 'management'], ['name' => 'Management']),
         ];
 
         // Posts
@@ -45,7 +48,7 @@ class DatabaseSeeder extends Seeder
             [
                 'title' => 'Top Platforms for Comprehensive Coding Education',
                 'excerpt' => 'Discover the best free platforms like freeCodeCamp and Codecademy that take you from beginner to job-ready developer.',
-                'content' => "The internet is a massive, open-source university where the only cost of admission is your time, discipline, and curiosity. Years ago, learning to code required an expensive computer science degree. Today, if you are looking for comprehensive learning, here are the top “one-stop shops” for coding that can take you from absolute beginner to a professional level developer without spending a dime.
+                'content' => "*Disclaimer: The cover image above was generated with AI.*\n\nThe internet is a massive, open-source university where the only cost of admission is your time, discipline, and curiosity. Years ago, learning to code required an expensive computer science degree. Today, if you are looking for comprehensive learning, here are the top “one-stop shops” for coding that can take you from absolute beginner to a professional level developer without spending a dime.
 
 ## 1. freeCodeCamp
 
@@ -78,7 +81,7 @@ GeeksforGeeks goes a layer deeper. It is widely used by computer science student
             [
                 'title' => 'Learn from the Best: University Coding MOOCs',
                 'excerpt' => 'Access world-class computer science education from Harvard, MIT, and Stanford for free through MOOCs.',
-                'content' => "Did you know you can take classes from the best universities in the world entirely from your living room? Massive Open Online Courses (MOOCs) allow anyone with an internet connection to audit computer science education from top-tier institutions. Many self-taught beginners are held back by the perceived cost of a university degree or elite bootcamp. But here is the profound truth: you can learn everything you need to become a world-class programmer for free.
+                'content' => "*Disclaimer: The cover image above was generated with AI.*\n\nDid you know you can take classes from the best universities in the world entirely from your living room? Massive Open Online Courses (MOOCs) allow anyone with an internet connection to audit computer science education from top-tier institutions. Many self-taught beginners are held back by the perceived cost of a university degree or elite bootcamp. But here is the profound truth: you can learn everything you need to become a world-class programmer for free.
 
 ## 1. Harvard's CS50x
 
@@ -109,7 +112,7 @@ If you specifically want to master modern, bleeding-edge web development rather 
             [
                 'title' => 'Master HTML & CSS: Resources for Web Design',
                 'excerpt' => 'Dedicated resources to master the core presentation layers of the web, focusing strictly on HTML structure and CSS styling.',
-                'content' => "Whether you want to build blazing-fast interactive websites from scratch, customize third-party WordPress themes, or start diving head-first into complex frontend frameworks like React and Vue, HTML and CSS are your unskippable foundational skills. You cannot build a solid house on an unstable foundation. Here is how to truly master the visual layers of the web according to industry experts:
+                'content' => "*Disclaimer: The cover image above was generated with AI.*\n\nWhether you want to build blazing-fast interactive websites from scratch, customize third-party WordPress themes, or start diving head-first into complex frontend frameworks like React and Vue, HTML and CSS are your unskippable foundational skills. You cannot build a solid house on an unstable foundation. Here is how to truly master the visual layers of the web according to industry experts:
 
 ## 1. MDN Web Docs
 
@@ -136,6 +139,75 @@ Did you know one of the most effective ways to master CSS is through gamificatio
 *Always Remember: Drag-and-drop visual builders and AI tools will only get a project 95 percent of the way there. Truly mastering CSS allows you to customize that final, most important 5 percent, thereby delivering truly unique, performant, and pixel-perfect results to users.*",
                 'coverImage' => '/uploads/html_css_cover.png',
                 'tags' => [(string) $tags['Web Dev']->_id, (string) $tags['Frontend']->_id],
+            ],
+            [
+                'title' => 'Management as a Moral Exercise',
+                'excerpt' => 'Management, at its core, is a moral exercise. Learn why psychological safety and technical rigor are the foundation of effective team leadership.',
+                'content' => "*Disclaimer: The cover image above was generated with AI.*\n\nThe longer one manages engineering teams, the more they conclude that an effective management philosophy is centered around two deeply interconnected themes: psychological safety and technical rigor. You can have each without the other, but the pitfalls are significant. Experience has shown that it’s possible to have both, and the results are consistently amazing for both product and people.
+
+## Psychological Safety
+
+I believe in transparency, integrity, and psychological safety among teams. Google spent years and millions of dollars trying to uncover what made their most productive teams successful (see Project Aristotle). Their conclusion? It was being real and genuine with each other. A team must feel safe to express dissent, ask “stupid” questions, and propose unconventional solutions without fear of punitive action or embarrassment.
+
+I believe in “smells.” When does a process or project or task seem “off”? If something smells, developers should feel empowered to speak up. That’s your taste, experience, and instinct talking, and that’s why companies hire you, invest in you, and value your contribution. The environment must foster this level of candor.
+
+## A Moral Responsibility
+
+Management, at its core, is a moral exercise. The counterbalance to formal organizational authority is the implicit responsibility leaders have to act justly. Leaders must check their biases regularly. They must seek diverse perspectives from diverse groups of people, ensuring that the reception of their words and actions is tightly consistent with their intentions.
+
+Great leaders remain constantly accountable to their teammates, who are literally entrusting them with their careers and livelihoods. Take that trust seriously every single day. 
+
+## Technical Rigor and Friction
+
+Engineering management is a technical job. While a manager may not be pushing code daily—there are sibling career tracks for a reason—if you are not technical enough to tell the difference between a strong and weak technical solution, you will ultimately do your teams a massive disservice. You will be a poor judge of engineering talent and unable to justify business decisions around priority. 
+
+Additionally, \"culture\" is what we do. The thousands of micro-interactions within a team and organization—attitudes, decisions, and behaviors—are our culture. Part of that is choosing to *push through friction*. Making the best engineering decision will often have friction. There’s almost always the correct path and the easy path. Take the correct path, even if it’s hard, because it ultimately leads to better outcomes and a stronger engineering culture.",
+                'coverImage' => '/uploads/management_moral_cover.png',
+                'tags' => [(string) $tags['Philosophy']->_id, (string) $tags['Management']->_id],
+            ],
+            [
+                'title' => 'Empowering Teams Without Micromanaging',
+                'excerpt' => 'A team is only as productive as its individual contributors. Discover strategies to empower developers and ship impactful products without micromanaging.',
+                'content' => "*Disclaimer: The cover image above was generated with AI.*\n\nA team is only as good and productive as its Individual Contributors (ICs). Effective management is not about writing the code for them; it is about putting those ICs in a place to be their absolute best selves. This means thoughtfully adding or removing processes, identifying opportunities for their growth and exposure, and creating, communicating, maintaining, and validating a strategic vision around the team’s work.
+
+## The Pitfall of Micromanagement
+
+I’m not interested in micromanagement. I deeply believe in a culture of discipline, meaning that we are disciplined and mature professionals who can be held accountable to delivering tasks without overbearing oversight. Micromanagement is as exhausting for the manager as it is for the contributor. 
+
+Effective management cannot miraculously make a team of ineffective ICs produce high-quality work. Conversely, a team of highly effective ICs will be aggressively capped, both in their velocity and quality, by ineffective or heavily micromanaging leadership. My objective is to empower you to be your best self, keep the team strategically on track to business outcomes, and handle the higher-level logistical details (budgets, inter-department meetings, JIRA coordination) that keep you genuinely productive and fulfilled.
+
+## Shipping Regularly as a Health Metric
+
+Shipping regularly is the most important indicator of a healthy team. Toxic teams rarely ship, nor do teams with insufficient maturity or broken processes. At the end of the day, we all work in this dynamic industry to ship impactful software products to millions of customers. The agile practices and cultural rituals we adopt must entirely be in service of a team that actually ships high-quality work to production.
+
+## Focus over Splintering
+
+I believe profoundly in focus. We will always be juggling multiple tasks at a time, but we must be diligent in identifying and shipping our highest priorities. This is why exercises like goal-setting, OKRs, and VMSOs (Vision Mission Strategy Objectives) are critical. I would much rather a team fully ship four complete, polished things in six months than half-ship eight unpolished things in the exact same time frame. Focus drives completion.",
+                'coverImage' => '/uploads/team_empowerment_cover.png',
+                'tags' => [(string) $tags['Business']->_id, (string) $tags['Management']->_id],
+            ],
+            [
+                'title' => 'Empathy, Burnout, and the Human Element',
+                'excerpt' => 'It is easy to forget the human element in software. Dive into intrinsic motivators, battling imposter syndrome, and maintaining a healthy culture.',
+                'content' => "*Disclaimer: The cover image above was generated with AI.*\n\nIn the ruthless pursuit of shipping features and improving metrics, it is incredibly easy for organizations to forget the fundamental human element of tech. Software is written by people, and understanding what motivates and challenges those people is vital for any successful engineering leader.
+
+## Intrinsic Motivators
+
+I strongly subscribe to Daniel Pink’s ideas on our foundational intrinsic motivators: Autonomy, Mastery, and Purpose. People do not do their best work when motivated purely by external rewards or punishments. They do their best work when they have control over how they work (Autonomy), when they have opportunities to get better at tasks that matter (Mastery), and when they understand the broader \"why\" behind the project (Purpose). I actively encourage developers to continually revisit how those three motivators intersect in their daily role.
+
+## Battling Imposter Syndrome
+
+Everyone has bouts of imposter syndrome. It is an incredibly common struggle in an industry that moves as fast as ours does. But here is the reality: you would not have been hired if you were not highly capable of doing your job. Leaders must consistently reassure their teams that occasional confusion or learning curves are not evidence of fraudulence, but simply the nature of engineering. Cultivating a supportive backchannel among coworkers is often the fastest way to get emotional support and technical context from across the organization.
+
+## Mitigating Burnout
+
+Burnout is intensely real, and its causes are not uniquely limited to the sheer number of hours spent working. Lack of agency, toxic dynamics, and unclear expectations contribute heavily. Take diligent care of yourself. I would infinitely prefer a teammate to leave early, take a mental health break, or switch tasks than quietly burn out. Employees are valued significantly more than their job title or their sprint velocity.
+
+While sometimes we’ll need to really churn on work to meet stricter external dates, that must forcefully be the exception rather than the norm. We cannot build a sustainable organization on a culture of workaholics. 
+
+Ensure that you celebrate a job well done. When people do something great, let them know explicitly. This could be as large as a complex new infrastructure migration to as small as a gracefully written commit message. A celebratory, empathetic culture is built one interaction at a time.",
+                'coverImage' => '/uploads/empathy_human_cover.png',
+                'tags' => [(string) $tags['Philosophy']->_id, (string) $tags['Business']->_id],
             ]
         ];
 

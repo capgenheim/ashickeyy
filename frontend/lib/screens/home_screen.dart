@@ -5,7 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../services/api_service.dart';
 import '../models/post.dart';
 import '../widgets/post_card.dart';
-import '../widgets/category_carousel.dart';
+import '../widgets/tag_carousel.dart';
 import '../widgets/hero_banner.dart';
 import '../widgets/shimmer_loader.dart';
 import '../widgets/footer.dart';
@@ -28,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _loadingMore = false;
   bool _hasMore = true;
   String? _cursor;
-  String? _selectedCategory;
+  String? _selectedTag;
   bool _showScrollToTop = false;
 
   @override
@@ -66,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchPosts() async {
     try {
-      final response = await _api.getPosts(category: _selectedCategory);
+      final response = await _api.getPosts(tag: _selectedTag);
       if (mounted) {
         setState(() {
           _posts = response.posts;
@@ -85,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _loadingMore = true);
 
     try {
-      final response = await _api.getPosts(cursor: _cursor, category: _selectedCategory);
+      final response = await _api.getPosts(cursor: _cursor, tag: _selectedTag);
       if (mounted) {
         setState(() {
           _posts.addAll(response.posts);
@@ -110,10 +110,10 @@ class _HomeScreenState extends State<HomeScreen> {
     await _fetchPosts();
   }
 
-  void _onCategorySelected(String? slug) {
-    if (_selectedCategory == slug) return;
+  void _onTagSelected(String? slug) {
+    if (_selectedTag == slug) return;
     setState(() {
-      _selectedCategory = slug;
+      _selectedTag = slug;
       _posts = [];
       _cursor = null;
       _hasMore = true;
@@ -186,12 +186,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         const SizedBox(height: 8),
 
-                        // Category tabs
+                        // Tag tabs
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: CategoryCarousel(
-                            selectedSlug: _selectedCategory,
-                            onCategorySelected: _onCategorySelected,
+                          child: TagCarousel(
+                            selectedSlug: _selectedTag,
+                            onTagSelected: _onTagSelected,
                           ),
                         ),
 
@@ -230,7 +230,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
             // Highlighted new posts (first 5)
-            if (!_loading && _posts.isNotEmpty && _selectedCategory == null)
+            if (!_loading && _posts.isNotEmpty && _selectedTag == null)
               SliverToBoxAdapter(
                 child: Center(
                   child: ConstrainedBox(
@@ -308,7 +308,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
             // Remaining posts
-            if (!_loading && _posts.length > 5 && _selectedCategory == null)
+            if (!_loading && _posts.length > 5 && _selectedTag == null)
               SliverToBoxAdapter(
                 child: Center(
                   child: ConstrainedBox(
@@ -357,8 +357,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-            // Category-filtered posts (no highlight split)
-            if (!_loading && _posts.isNotEmpty && _selectedCategory != null)
+            // Tag-filtered posts (no highlight split)
+            if (!_loading && _posts.isNotEmpty && _selectedTag != null)
               SliverToBoxAdapter(
                 child: Center(
                   child: ConstrainedBox(
