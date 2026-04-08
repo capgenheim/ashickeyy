@@ -132,7 +132,7 @@ class AboutScreen extends StatelessWidget {
                 // Built with section
                 Center(
                   child: Text(
-                    'Built with Flutter · Laravel · MongoDB',
+                    'Designed to inspire and share stories.',
                     style: textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                     ),
