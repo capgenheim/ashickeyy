@@ -150,7 +150,7 @@ class PostController extends Controller
             'excerpt' => e($validated['excerpt']),
             'coverImage' => $validated['coverImage'] ?? '',
             'category' => $validated['category'],
-            'tags' => $validated['tags'] ?? [],
+            'tags' => $this->processDynamicTags($validated['tags'] ?? []),
             'status' => $status,
             'publishedAt' => $pubAt,
             'author' => $user->email,
@@ -205,7 +205,7 @@ class PostController extends Controller
             $updateData['category'] = $validated['category'];
         }
         if (isset($validated['tags'])) {
-            $updateData['tags'] = $validated['tags'];
+            $updateData['tags'] = $this->processDynamicTags($validated['tags']);
         }
         if (isset($validated['status'])) {
             $updateData['status'] = $validated['status'];
@@ -243,6 +243,23 @@ class PostController extends Controller
         $post->delete();
 
         return response()->json(['message' => 'Post deleted']);
+    }
+
+    private function processDynamicTags(array $tags): array
+    {
+        $processed = [];
+        foreach ($tags as $tagInput) {
+            if (preg_match('/^[a-f\d]{24}$/i', $tagInput)) {
+                $processed[] = $tagInput;
+            } else {
+                $slug = Str::slug($tagInput);
+                if (!empty($slug)) {
+                    $tagModel = Tag::firstOrCreate(['slug' => $slug], ['name' => $tagInput, 'slug' => $slug]);
+                    $processed[] = (string) $tagModel->_id;
+                }
+            }
+        }
+        return array_unique($processed);
     }
 
     private function formatPost(Post $post, bool $includeContent): array
