@@ -83,6 +83,15 @@ class AboutScreen extends StatelessWidget {
                     color: colorScheme.onSurface,
                   ),
                 ).animate().fadeIn(duration: 500.ms, delay: 400.ms),
+                const SizedBox(height: 24),
+                Text(
+                  'You might be wondering: what does "ashickey" mean? It is my alter ego—a combination of my real name, Ashraf, and Earl Hickey from my favorite sitcom "My Name is Earl". I love that show because it is about an ordinary guy striving to be a better person by fixing his past mistakes. It reminds us that we can all learn, do good, and improve every day. That is exactly the spirit of this blog: learning together and helping the community.',
+                  style: textTheme.bodyLarge?.copyWith(
+                    height: 1.8,
+                    fontSize: 18,
+                    color: colorScheme.onSurface,
+                  ),
+                ).animate().fadeIn(duration: 500.ms, delay: 450.ms),
                 const SizedBox(height: 32),
 
                 Text(
