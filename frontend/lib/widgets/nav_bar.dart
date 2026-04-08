@@ -76,14 +76,7 @@ class _AppNavBarState extends State<AppNavBar> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Image.asset(
-                          isDark
-                              ? 'assets/images/ashickey_dark.webp'
-                              : 'assets/images/ashickey_light.webp',
-                          height: 28,
-                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                        ),
-                        const SizedBox(width: 8),
+
                         Text(
                           'ashickey{}',
                           style: TextStyle(

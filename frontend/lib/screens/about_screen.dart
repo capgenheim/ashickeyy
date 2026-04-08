@@ -29,24 +29,20 @@ class AboutScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       Container(
-                        width: 88,
-                        height: 88,
+                        width: 120,
+                        height: 120,
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [colorScheme.primary, colorScheme.tertiary],
-                          ),
                           shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            'A',
-                            style: textTheme.displaySmall?.copyWith(
-                              color: colorScheme.onPrimary,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 32,
+                          boxShadow: [
+                            BoxShadow(
+                              color: colorScheme.shadow.withValues(alpha: 0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
+                          ],
+                          image: const DecorationImage(
+                            image: AssetImage('assets/images/acap.png'),
+                            fit: BoxFit.cover,
                           ),
                         ),
                       )
@@ -78,8 +74,9 @@ class AboutScreen extends StatelessWidget {
                 // About section
                 Text(
                   'Welcome to ashickey{} — a space where technology meets simplicity. '
-                  'This blog covers current issues in tech, beginner-friendly development tutorials, '
-                  'and general thoughts on the digital world around us.',
+                  'This platform is created for beginners to easily understand and start building something amazing. '
+                  'We discuss current issues, simplify complex tech concepts, and write tutorials in very simple English. '
+                  'This website will keep updating with new features and content so the community can always stay in touch and grow together.',
                   style: textTheme.bodyLarge?.copyWith(
                     height: 1.8,
                     fontSize: 18,

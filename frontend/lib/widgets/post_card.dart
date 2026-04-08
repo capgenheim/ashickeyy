@@ -37,28 +37,19 @@ class _PostCardState extends State<PostCard> {
                 children: [
                   // Author avatar
                   Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [colorScheme.primary, colorScheme.tertiary],
-                      ),
+                    width: 32,
+                    height: 32,
+                    decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        'A',
-                        style: TextStyle(
-                          color: colorScheme.onPrimary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      image: DecorationImage(
+                        image: AssetImage('assets/images/acap.png'),
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'ashickey{}',
+                    'acap',
                     style: textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: colorScheme.onSurface,

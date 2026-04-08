@@ -112,22 +112,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 Row(
                   children: [
                     Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [colorScheme.primary, colorScheme.tertiary],
-                        ),
+                      width: 50,
+                      height: 50,
+                      decoration: const BoxDecoration(
                         shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          'A',
-                          style: TextStyle(
-                            color: colorScheme.onPrimary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        image: DecorationImage(
+                          image: AssetImage('assets/images/acap.png'),
+                          fit: BoxFit.cover,
                         ),
                       ),
                     ),
@@ -136,7 +127,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'ashickey{}',
+                          'acap',
                           style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         Row(

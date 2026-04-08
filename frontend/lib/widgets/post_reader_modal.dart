@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:html' as html;
 import '../models/post.dart';
 import '../services/api_service.dart';
@@ -102,6 +103,14 @@ class _PostReaderModalState extends State<PostReaderModal> {
                               ),
                               const Spacer(),
                               IconButton(
+                                tooltip: 'Expand article fullscreen',
+                                icon: Icon(Icons.open_in_full_rounded, size: 20, color: colorScheme.onSurfaceVariant),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  context.push('/post/${widget.slug}');
+                                },
+                              ),
+                              IconButton(
                                 icon: Icon(Icons.close, size: 20, color: colorScheme.onSurfaceVariant),
                                 onPressed: () => Navigator.pop(context),
                               ),
@@ -145,44 +154,36 @@ class _PostReaderModalState extends State<PostReaderModal> {
                                       Row(
                                         children: [
                                           Container(
-                                            width: 40,
-                                            height: 40,
-                                            decoration: BoxDecoration(
-                                              gradient: LinearGradient(
-                                                colors: [colorScheme.primary, colorScheme.tertiary],
-                                              ),
+                                            width: 50,
+                                            height: 50,
+                                            decoration: const BoxDecoration(
                                               shape: BoxShape.circle,
-                                            ),
-                                            child: Center(
-                                              child: Text(
-                                                'A',
-                                                style: TextStyle(
-                                                  color: colorScheme.onPrimary,
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w700,
-                                                ),
+                                              image: DecorationImage(
+                                                image: AssetImage('assets/images/acap.png'),
+                                                fit: BoxFit.cover,
                                               ),
                                             ),
                                           ),
                                           const SizedBox(width: 12),
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'ashickey{}',
-                                                style: textTheme.bodyMedium?.copyWith(
-                                                  fontWeight: FontWeight.w600,
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'acap',
+                                                  style: textTheme.bodyMedium?.copyWith(
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
                                                 ),
-                                              ),
-                                              Text(
-                                                '${DateFormatter.relative(_post!.publishedAt)} · ${_post!.readTime} min read',
-                                                style: textTheme.bodySmall?.copyWith(
-                                                  color: colorScheme.onSurfaceVariant,
+                                                Text(
+                                                  '${DateFormatter.relative(_post!.publishedAt)} · ${_post!.readTime} min read',
+                                                  style: textTheme.bodySmall?.copyWith(
+                                                    color: colorScheme.onSurfaceVariant,
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
+                                              ],
+                                            ),
                                           ),
-                                          const Spacer(),
                                           IconButton(
                                             icon: Icon(Icons.share_outlined, size: 20, color: colorScheme.onSurfaceVariant),
                                             onPressed: _sharePost,
