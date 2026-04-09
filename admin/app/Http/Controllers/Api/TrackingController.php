@@ -27,6 +27,7 @@ class TrackingController extends Controller
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'userAgent' => 'nullable|string',
+            'action' => 'nullable|string',
         ]);
 
         $db = $this->mongo->ashickey;
@@ -36,6 +37,7 @@ class TrackingController extends Controller
             $collection->insertOne([
                 'visitorId' => $validated['visitorId'],
                 'postSlug' => $validated['postSlug'],
+                'action' => $validated['action'] ?? 'app_open',
                 'latitude' => $validated['latitude'],
                 'longitude' => $validated['longitude'],
                 'userAgent' => $request->userAgent() ?? $validated['userAgent'],

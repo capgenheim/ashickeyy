@@ -6,9 +6,11 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:async';
 import 'dart:html' as html;
 import '../models/post.dart';
 import '../services/api_service.dart';
+import '../services/tracking_service.dart';
 import '../utils/date_formatter.dart';
 
 class PostReaderModal extends StatefulWidget {
@@ -34,11 +36,37 @@ class _PostReaderModalState extends State<PostReaderModal> {
   Post? _post;
   bool _loading = true;
   bool _markedAsRead = false;
+  
+  // Tracking Telemetry State
+  bool _timeMet = false;
+  bool _scrollMet = false;
+  bool _isActualReaderLogged = false;
+  Timer? _readTimer;
 
   @override
   void initState() {
     super.initState();
     _fetchPost();
+
+    TrackingService.logEngagement('just_view', postSlug: widget.slug);
+
+    _readTimer = Timer(const Duration(seconds: 15), () {
+      _timeMet = true;
+      _evaluateActualReader();
+    });
+  }
+
+  void _evaluateActualReader() {
+    if (_timeMet && _scrollMet && !_isActualReaderLogged) {
+      _isActualReaderLogged = true;
+      TrackingService.logEngagement('actual_reader', postSlug: widget.slug);
+    }
+  }
+
+  @override
+  void dispose() {
+    _readTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _markAsRead() async {
@@ -100,6 +128,10 @@ class _PostReaderModalState extends State<PostReaderModal> {
       builder: (_, controller) {
         // Attach listener to mark as read when scrolling down
         controller.addListener(() {
+          if (controller.position.pixels >= controller.position.maxScrollExtent * 0.3) {
+            _scrollMet = true;
+            _evaluateActualReader();
+          }
           if (controller.position.pixels >= controller.position.maxScrollExtent * 0.6) {
             _markAsRead();
           }
