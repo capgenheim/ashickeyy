@@ -54,10 +54,9 @@ class BlastEmailJob implements ShouldQueue
             }
 
             if (!empty($emails)) {
-                // Ensure Redis queue limits the throughput, sending chunked batches locally
-                $chunks = array_chunk($emails, 50); // Dispatch 50 at a time securely via Bcc
-                foreach ($chunks as $chunk) {
-                    Mail::bcc($chunk)->send(new NewPostMail($this->title, $this->slug, $this->excerpt, $this->coverImage));
+                // Queue individually to each user line by line targeting 'To' natively against the worker limits
+                foreach ($emails as $email) {
+                    Mail::to($email)->queue(new NewPostMail($this->title, $this->slug, $this->excerpt, $this->coverImage));
                 }
             }
         } catch (\Exception $e) {
