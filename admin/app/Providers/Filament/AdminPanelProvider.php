@@ -27,6 +27,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('kcg5025')
             ->login()
+            ->brandName('Ashickey Admin')
             ->colors([
                 'primary' => Color::Amber,
             ])

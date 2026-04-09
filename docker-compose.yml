@@ -59,6 +59,7 @@ services:
       MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME}
       QUEUE_CONNECTION: ${QUEUE_CONNECTION}
+      REDIS_CLIENT: predis
       REDIS_HOST: ${REDIS_HOST}
     volumes:
       - ./uploads:/app/public/uploads
@@ -95,6 +96,7 @@ services:
       MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME}
       QUEUE_CONNECTION: ${QUEUE_CONNECTION}
+      REDIS_CLIENT: predis
       REDIS_HOST: ${REDIS_HOST}
     depends_on:
       mongo:

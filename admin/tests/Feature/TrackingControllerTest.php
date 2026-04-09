@@ -13,6 +13,7 @@ class TrackingControllerTest extends TestCase
      */
     public function test_telemetry_action_logs_correctly_on_initial_app_open()
     {
+        $this->withoutExceptionHandling();
         // Mock a visitor ID
         $visitorId = 'fake-uuid-visitor';
 
@@ -24,6 +25,7 @@ class TrackingControllerTest extends TestCase
             'userAgent' => 'Pest Test Engine'
         ]);
 
+        file_put_contents('/tmp/error.json', $response->content());
         $response->assertStatus(200);
         $response->assertJson(['status' => 'success']);
     }

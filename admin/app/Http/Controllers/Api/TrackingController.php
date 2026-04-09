@@ -3,23 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
-use MongoDB\Client as MongoClient;
 use Illuminate\Support\Facades\Log;
 
 class TrackingController extends Controller
 {
-    private $mongo;
-
-    public function __construct()
-    {
-        $this->mongo = new MongoClient(env('DB_DSN', 'mongodb://ashickey-mongo:27017'));
-    }
-
     /**
      * Stash geolocation analytical trace
      */
-    public function logAnalytics(Request $request) 
+    public function logAnalytics(Request $request)
     {
         $validated = $request->validate([
             'visitorId' => 'required|string',
@@ -30,7 +23,7 @@ class TrackingController extends Controller
             'action' => 'nullable|string',
         ]);
 
-        $db = $this->mongo->ashickey;
+        $db = app('db')->connection('mongodb')->getDatabase();
         $collection = $db->visitor_analytics;
 
         try {
@@ -43,6 +36,15 @@ class TrackingController extends Controller
                 'userAgent' => $request->userAgent() ?? $validated['userAgent'],
                 'ip_address' => $request->ip(),
                 'timestamp' => new \MongoDB\BSON\UTCDateTime(),
+            ]);
+
+            AuditLog::record($validated['action'] ?? 'page_view', 'frontend', [
+                'resource' => 'analytics',
+                'resource_id' => $validated['visitorId'],
+                'details' => [
+                    'postSlug' => $validated['postSlug'] ?? null,
+                    'action' => $validated['action'] ?? 'app_open',
+                ],
             ]);
 
             return response()->json(['status' => 'success']);
@@ -63,11 +65,10 @@ class TrackingController extends Controller
             'keys.auth' => 'required|string',
         ]);
 
-        $db = $this->mongo->ashickey;
+        $db = app('db')->connection('mongodb')->getDatabase();
         $collection = $db->push_subscriptions;
 
         try {
-            // upsert to prevent exact duplicate endpoints
             $collection->updateOne(
                 ['endpoint' => $validated['endpoint']],
                 ['$set' => [
@@ -80,6 +81,11 @@ class TrackingController extends Controller
                 ]],
                 ['upsert' => true]
             );
+
+            AuditLog::record('subscribe', 'frontend', [
+                'resource' => 'push_subscription',
+                'details' => ['endpoint_prefix' => substr($validated['endpoint'], 0, 50)],
+            ]);
 
             return response()->json(['status' => 'subscribed']);
         } catch (\Exception $e) {
@@ -97,7 +103,7 @@ class TrackingController extends Controller
             'email' => 'required|email'
         ]);
 
-        $db = $this->mongo->ashickey;
+        $db = app('db')->connection('mongodb')->getDatabase();
         $collection = $db->email_subscriptions;
 
         try {
@@ -109,6 +115,11 @@ class TrackingController extends Controller
                 ]],
                 ['upsert' => true]
             );
+
+            AuditLog::record('subscribe', 'frontend', [
+                'resource' => 'email_subscription',
+                'details' => ['email' => $validated['email']],
+            ]);
 
             return response()->json(['status' => 'subscribed']);
         } catch (\Exception $e) {

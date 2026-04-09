@@ -10,7 +10,8 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use App\Mail\NewPostMail;
-use MongoDB\Client;
+use App\Models\Subscriber;
+use App\Models\AuditLog;
 
 class BlastEmailJob implements ShouldQueue
 {
@@ -23,10 +24,8 @@ class BlastEmailJob implements ShouldQueue
 
     /**
      * Create a new job instance.
-     *
-     * @return void
      */
-    public function __construct(string $title, string $slug, string $excerpt, string $coverImage)
+    public function __construct(string $title, string $slug, string $excerpt, string $coverImage = '')
     {
         $this->title = $title;
         $this->slug = $slug;
@@ -36,31 +35,30 @@ class BlastEmailJob implements ShouldQueue
 
     /**
      * Execute the job.
-     *
-     * @return void
      */
     public function handle()
     {
         try {
-            $mongo = new Client(env('DB_DSN', 'mongodb://ashickey-mongo:27017'));
-            $collection = $mongo->ashickey->email_subscriptions;
-            $subs = $collection->find([]);
+            $subscribers = Subscriber::pluck('email')->filter()->toArray();
 
-            $emails = [];
-            foreach ($subs as $sub) {
-                if (!empty($sub['email'])) {
-                    $emails[] = $sub['email'];
-                }
-            }
-
-            if (!empty($emails)) {
-                // Queue individually to each user line by line targeting 'To' natively against the worker limits
-                foreach ($emails as $email) {
+            if (!empty($subscribers)) {
+                foreach ($subscribers as $email) {
                     Mail::to($email)->queue(new NewPostMail($this->title, $this->slug, $this->excerpt, $this->coverImage));
                 }
+
+                AuditLog::record('email_blast', 'system', [
+                    'resource' => 'post',
+                    'details' => [
+                        'post_title' => $this->title,
+                        'post_slug' => $this->slug,
+                        'recipients_count' => count($subscribers),
+                    ],
+                ]);
             }
+
+            Log::info("BlastEmailJob sent to " . count($subscribers) . " subscribers for post: {$this->title}");
         } catch (\Exception $e) {
-            Log::error('Background BlastEmailJob Failed: ' . $e->getMessage());
+            Log::error('BlastEmailJob Failed: ' . $e->getMessage());
         }
     }
 }
