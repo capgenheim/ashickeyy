@@ -27,15 +27,7 @@
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-            <div class="form-group">
-                <label class="form-label">Category</label>
-                <select name="category" class="form-select" required>
-                    <option value="">Select category</option>
-                    @foreach($categories as $cat)
-                        <option value="{{ $cat->_id }}" {{ old('category', $post?->category) == (string)$cat->_id ? 'selected' : '' }}>{{ $cat->name }}</option>
-                    @endforeach
-                </select>
-            </div>
+
             <div class="form-group">
                 <label class="form-label">Status</label>
                 <select name="status" class="form-select" required onchange="toggleSchedule(this.value)">
@@ -51,16 +43,8 @@
         </div>
 
         <div class="form-group">
-            <label class="form-label">Tags</label>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                @foreach($tags as $tag)
-                    <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;">
-                        <input type="checkbox" name="tags[]" value="{{ $tag->_id }}"
-                            {{ in_array((string)$tag->_id, old('tags', $post?->tags ?? [])) ? 'checked' : '' }}>
-                        {{ $tag->name }}
-                    </label>
-                @endforeach
-            </div>
+            <label class="form-label">Tags (Type and press Enter, or enter an existing Tag ID)</label>
+             <input type="text" name="tags" class="form-input" id="tags-input" value="{{ implode(',', \App\Models\Tag::whereIn('_id', old('tags', $post?->tags ?? []))->pluck('name')->toArray()) }}">
         </div>
 
         <div class="form-group">
@@ -75,8 +59,40 @@
 <!-- EasyMDE Integration -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
 <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
-<script>
+    <!-- Tagify CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
+    <style>
+        .tagify {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+        .tagify__input {
+            color: var(--text);
+        }
+        .tagify__tag > div::before {
+            background: var(--surface-hover);
+        }
+        .tagify__tag-text {
+            color: var(--text) !important;
+        }
+        .tagify__tag__removeBtn {
+            color: var(--text);
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+    <script>
     document.addEventListener("DOMContentLoaded", function() {
+        // Tagify Initialization
+        var input = document.querySelector('#tags-input');
+        if (input) {
+            new Tagify(input, {
+                originalInputValueFormat: valuesArr => valuesArr.map(item => item.value).join(',')
+            });
+        }
+
+        // EasyMDE Initialization
         new EasyMDE({ 
             element: document.querySelector('.form-textarea'),
             spellChecker: false,
@@ -86,6 +102,30 @@
                 delay: 3000,
             },
             status: ["autosave", "lines", "words", "cursor"],
+            uploadImage: true,
+            imageUploadFunction: function(file, onSuccess, onError) {
+                var formData = new FormData();
+                formData.append('file', file);
+                
+                fetch("{{ route('admin.media.upload') }}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Upload failed');
+                    return response.json();
+                })
+                .then(data => {
+                    if(data.url) onSuccess(data.url);
+                    else onError('Invalid response format');
+                })
+                .catch(err => {
+                    onError(err.message);
+                });
+            }
         });
     });
 

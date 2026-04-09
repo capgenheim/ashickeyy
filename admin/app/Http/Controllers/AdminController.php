@@ -11,6 +11,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Minishlink\WebPush\WebPush;
+use Minishlink\WebPush\Subscription;
+use MongoDB\Client as MongoClient;
 
 class AdminController extends Controller
 {
@@ -56,7 +59,6 @@ class AdminController extends Controller
             'drafts' => Post::where('status', 'draft')->count(),
             'categories' => Category::count(),
             'tags' => Tag::count(),
-            'totalViews' => Post::sum('views') ?? 0,
         ];
         $recentPosts = Post::orderBy('created_at', 'desc')->limit(5)->get();
 
@@ -66,28 +68,31 @@ class AdminController extends Controller
     public function posts()
     {
         $posts = Post::orderBy('created_at', 'desc')->get();
-        $categories = Category::orderBy('name')->get();
-        return view('admin.posts', compact('posts', 'categories'));
+        return view('admin.posts', compact('posts'));
     }
 
     public function createPost()
     {
-        $categories = Category::orderBy('name')->get();
         $tags = Tag::orderBy('name')->get();
         return view('admin.post-editor', [
             'post' => null,
-            'categories' => $categories,
             'tags' => $tags,
         ]);
     }
 
     public function storePost(Request $request)
     {
+        // Decode Tagify JSON if present
+        if (is_string($request->input('tags'))) {
+            $tagsData = json_decode($request->input('tags'), true);
+            $parsedTags = is_array($tagsData) ? array_column($tagsData, 'value') : [];
+            $request->merge(['tags' => $parsedTags]);
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:200',
             'content' => 'required|string',
             'excerpt' => 'required|string|max:500',
-            'category' => 'required|string',
             'tags' => 'nullable|array',
             'status' => 'required|in:draft,published',
             'coverImage' => 'nullable|string',
@@ -102,8 +107,7 @@ class AdminController extends Controller
             'content' => $validated['content'],
             'excerpt' => e($validated['excerpt']),
             'coverImage' => $validated['coverImage'] ?? '',
-            'category' => $validated['category'],
-            'tags' => $validated['tags'] ?? [],
+            'tags' => $this->processDynamicTags($validated['tags'] ?? []),
             'status' => $status,
             'publishedAt' => $status === 'published' ? now() : null,
             'author' => Auth::user()->email,
@@ -111,26 +115,78 @@ class AdminController extends Controller
             'views' => 0,
         ]);
 
+        if ($status === 'published') {
+            $this->dispatchPushNotification($validated['title'], $slug);
+        }
+
         return redirect()->route('admin.posts')->with('success', 'Post created successfully.');
+    }
+
+    private function dispatchPushNotification(string $title, string $slug)
+    {
+        try {
+            $mongo = new MongoClient(env('DB_DSN', 'mongodb://ashickey-mongo:27017'));
+            $collection = $mongo->ashickey->push_subscriptions;
+            $subs = $collection->find([]);
+
+            $auth = [
+                'VAPID' => [
+                    'subject' => 'mailto:admin@ashickey.space',
+                    'publicKey' => 'BJgc7yMNMJQXLuw7LulYHUF7KQqzor8-lmnjInJsf_7N5MmgS8hpVCC5gUAZ2n9kgIwnGJV4Ex937XUzf9IrHxg',
+                    'privateKey' => 'FkjxpSgx1Z2qhyl6dNdxR56mcHaGOmAhfLPHTJHr3ak',
+                ],
+            ];
+
+            $webPush = new WebPush($auth);
+            $payload = json_encode([
+                'title' => 'New Post: ' . $title,
+                'body' => 'Check out the latest insights on ashickey{}',
+                'url' => 'https://ashickey.space/post/' . $slug,
+            ]);
+
+            foreach ($subs as $sub) {
+                $subscription = Subscription::create([
+                    'endpoint' => $sub['endpoint'],
+                    'publicKey' => $sub['keys']['p256dh'],
+                    'authToken' => $sub['keys']['auth'],
+                ]);
+                $webPush->queueNotification($subscription, $payload);
+            }
+
+            foreach ($webPush->flush() as $report) {
+                if (!$report->isSuccess()) {
+                    if ($report->isSubscriptionExpired()) {
+                        $collection->deleteOne(['endpoint' => $report->getRequest()->getUri()->__toString()]);
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Push Blast Failed: ' . $e->getMessage());
+        }
     }
 
     public function editPost(string $id)
     {
         $post = Post::findOrFail($id);
-        $categories = Category::orderBy('name')->get();
         $tags = Tag::orderBy('name')->get();
-        return view('admin.post-editor', compact('post', 'categories', 'tags'));
+        return view('admin.post-editor', compact('post', 'tags'));
     }
 
     public function updatePost(Request $request, string $id)
     {
         $post = Post::findOrFail($id);
 
+        // Decode Tagify JSON if present
+        if (is_string($request->input('tags'))) {
+            $tagsData = json_decode($request->input('tags'), true);
+            $parsedTags = is_array($tagsData) ? array_column($tagsData, 'value') : [];
+            $request->merge(['tags' => $parsedTags]);
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:200',
             'content' => 'required|string',
             'excerpt' => 'required|string|max:500',
-            'category' => 'required|string',
             'tags' => 'nullable|array',
             'status' => 'required|in:draft,published',
             'coverImage' => 'nullable|string',
@@ -142,8 +198,7 @@ class AdminController extends Controller
             'content' => $validated['content'],
             'excerpt' => e($validated['excerpt']),
             'coverImage' => $validated['coverImage'] ?? '',
-            'category' => $validated['category'],
-            'tags' => $validated['tags'] ?? [],
+            'tags' => $this->processDynamicTags($validated['tags'] ?? []),
             'status' => $validated['status'],
             'publishedAt' => $validated['status'] === 'published' && !$post->publishedAt ? now() : $post->publishedAt,
             'readTime' => Post::calculateReadTime($validated['content']),
@@ -158,24 +213,7 @@ class AdminController extends Controller
         return redirect()->route('admin.posts')->with('success', 'Post deleted.');
     }
 
-    public function categories()
-    {
-        $categories = Category::orderBy('name')->get();
-        return view('admin.categories', compact('categories'));
-    }
 
-    public function storeCategory(Request $request)
-    {
-        $validated = $request->validate(['name' => 'required|string|max:100', 'description' => 'nullable|string|max:500']);
-        Category::create(['name' => e($validated['name']), 'slug' => Str::slug($validated['name']), 'description' => e($validated['description'] ?? '')]);
-        return redirect()->route('admin.categories')->with('success', 'Category created.');
-    }
-
-    public function deleteCategory(string $id)
-    {
-        Category::findOrFail($id)->delete();
-        return redirect()->route('admin.categories')->with('success', 'Category deleted.');
-    }
 
     public function tags()
     {
@@ -215,6 +253,26 @@ class AdminController extends Controller
             'mimeType' => $file->getMimeType(),
             'size' => $file->getSize(),
         ]);
-        return redirect()->route('admin.media')->with('success', 'File uploaded.');
+        return response()->json(['url' => "/uploads/{$filename}"]); // Updated for Markdown editor upload image functionality
+    }
+
+    private function processDynamicTags(array $tags): array
+    {
+        $processed = [];
+        foreach ($tags as $tagInput) {
+            // Tagify sends back tags in different forms depending on implementation.
+            // If they are JSON strings parsing may be needed, otherwise it's just strings.
+            // Assuming the frontend submits array of strings (names or IDs):
+            if (preg_match('/^[a-f\d]{24}$/i', $tagInput)) {
+                $processed[] = $tagInput;
+            } else {
+                $slug = Str::slug($tagInput);
+                if (!empty($slug)) {
+                    $tagModel = Tag::firstOrCreate(['slug' => $slug], ['name' => $tagInput, 'slug' => $slug]);
+                    $processed[] = (string) $tagModel->_id;
+                }
+            }
+        }
+        return array_unique($processed);
     }
 }

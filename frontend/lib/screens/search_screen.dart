@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import '../services/api_service.dart';
 import '../models/post.dart';
+import '../models/tag.dart';
 import '../widgets/post_card.dart';
 import '../widgets/shimmer_loader.dart';
 import '../widgets/footer.dart';
@@ -10,8 +12,9 @@ import '../utils/responsive.dart';
 
 class SearchScreen extends StatefulWidget {
   final String? initialQuery;
+  final String? initialTag;
 
-  const SearchScreen({super.key, this.initialQuery});
+  const SearchScreen({super.key, this.initialQuery, this.initialTag});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -23,16 +26,28 @@ class _SearchScreenState extends State<SearchScreen> {
   final ScrollController _scrollController = ScrollController();
 
   List<Post> _results = [];
+  List<Tag> _tags = [];
   bool _loading = false;
+  bool _loadingTags = true;
   bool _hasSearched = false;
   bool _showScrollToTop = false;
+  String? _selectedTag;
+  bool _searchByTag = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _fetchTags();
+
+    // Auto-search if tag passed
+    if (widget.initialTag != null && widget.initialTag!.isNotEmpty) {
+      _selectedTag = widget.initialTag;
+      _searchByTag = true;
+      _searchByTagSlug(widget.initialTag!);
+    }
     // Auto-search if query passed from nav bar
-    if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
+    else if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
       _controller.text = widget.initialQuery!;
       _search(widget.initialQuery!);
     }
@@ -41,10 +56,18 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void didUpdateWidget(covariant SearchScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.initialQuery != null &&
+    if (widget.initialTag != null &&
+        widget.initialTag != oldWidget.initialTag &&
+        widget.initialTag!.isNotEmpty) {
+      _selectedTag = widget.initialTag;
+      _searchByTag = true;
+      _searchByTagSlug(widget.initialTag!);
+    } else if (widget.initialQuery != null &&
         widget.initialQuery != oldWidget.initialQuery &&
         widget.initialQuery!.isNotEmpty) {
       _controller.text = widget.initialQuery!;
+      _searchByTag = false;
+      _selectedTag = null;
       _search(widget.initialQuery!);
     }
   }
@@ -56,10 +79,19 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  Future<void> _fetchTags() async {
+    try {
+      final tags = await _api.getTags();
+      if (mounted) setState(() { _tags = tags; _loadingTags = false; });
+    } catch (e) {
+      if (mounted) setState(() => _loadingTags = false);
+    }
+  }
+
   Future<void> _search(String query) async {
     if (query.trim().isEmpty) return;
 
-    setState(() { _loading = true; _hasSearched = true; });
+    setState(() { _loading = true; _hasSearched = true; _searchByTag = false; _selectedTag = null; });
 
     try {
       final response = await _api.getPosts(search: query.trim());
@@ -69,11 +101,38 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  Future<void> _searchByTagSlug(String tagSlug) async {
+    setState(() { _loading = true; _hasSearched = true; _searchByTag = true; _selectedTag = tagSlug; _controller.clear(); });
+
+    try {
+      final response = await _api.getPosts(tag: tagSlug);
+      if (mounted) setState(() { _results = response.posts; _loading = false; });
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _clearTagFilter() {
+    setState(() {
+      _searchByTag = false;
+      _selectedTag = null;
+      _results = [];
+      _hasSearched = false;
+    });
+    context.go('/search');
+  }
+
   @override
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  String _getTagName(String slug) {
+    final tag = _tags.where((t) => t.slug == slug);
+    if (tag.isNotEmpty) return tag.first.name;
+    return slug;
   }
 
   @override
@@ -121,7 +180,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     child: TextField(
                       controller: _controller,
                       onSubmitted: _search,
-                      autofocus: widget.initialQuery == null,
+                      autofocus: widget.initialQuery == null && widget.initialTag == null,
                       decoration: InputDecoration(
                         hintText: 'Search stories...',
                         hintStyle: textTheme.bodyLarge?.copyWith(
@@ -139,7 +198,87 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   ).animate().fadeIn(duration: 300.ms),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 16),
+
+                  // Tag filter chips
+                  if (!_loadingTags && _tags.isNotEmpty)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.label_outline, size: 16, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Search by tag:',
+                              style: textTheme.labelMedium?.copyWith(
+                                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: _tags.map((tag) {
+                            final isSelected = _selectedTag == tag.slug;
+                            return _SearchTagChip(
+                              label: '#${tag.name}',
+                              isSelected: isSelected,
+                              onTap: () {
+                                if (isSelected) {
+                                  _clearTagFilter();
+                                } else {
+                                  context.go('/search?tag=${tag.slug}');
+                                  _searchByTagSlug(tag.slug);
+                                }
+                              },
+                              colorScheme: colorScheme,
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ).animate().fadeIn(duration: 300.ms, delay: 100.ms),
+
+                  const SizedBox(height: 24),
+
+                  // Active tag filter indicator
+                  if (_searchByTag && _selectedTag != null && !_loading)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: colorScheme.primary.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.label_rounded, size: 18, color: colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Showing posts tagged #${_getTagName(_selectedTag!)}',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: _clearTagFilter,
+                            child: MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: Icon(Icons.close_rounded, size: 18, color: colorScheme.primary),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ).animate().fadeIn(duration: 200.ms),
 
                   // Results
                   if (_loading)
@@ -164,7 +303,9 @@ class _SearchScreenState extends State<SearchScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Try a different search term.',
+                              _searchByTag
+                                  ? 'No stories found with this tag.'
+                                  : 'Try a different search term.',
                               style: textTheme.bodyMedium?.copyWith(
                                 color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                               ),
@@ -178,7 +319,9 @@ class _SearchScreenState extends State<SearchScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${_results.length} result${_results.length == 1 ? '' : 's'} for "${_controller.text}"',
+                          _searchByTag
+                              ? '${_results.length} post${_results.length == 1 ? '' : 's'} tagged #${_getTagName(_selectedTag!)}'
+                              : '${_results.length} result${_results.length == 1 ? '' : 's'} for "${_controller.text}"',
                           style: textTheme.bodySmall?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
@@ -207,6 +350,66 @@ class _SearchScreenState extends State<SearchScreen> {
                   const AppFooter(),
                 ],
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchTagChip extends StatefulWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final ColorScheme colorScheme;
+
+  const _SearchTagChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+    required this.colorScheme,
+  });
+
+  @override
+  State<_SearchTagChip> createState() => _SearchTagChipState();
+}
+
+class _SearchTagChipState extends State<_SearchTagChip> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: widget.isSelected
+                ? widget.colorScheme.primary
+                : _isHovered
+                    ? widget.colorScheme.surfaceContainerHighest
+                    : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: widget.isSelected
+                  ? widget.colorScheme.primary
+                  : widget.colorScheme.outlineVariant.withValues(alpha: 0.5),
+            ),
+          ),
+          child: Text(
+            widget.label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.w500,
+              color: widget.isSelected
+                  ? widget.colorScheme.onPrimary
+                  : widget.colorScheme.onSurfaceVariant,
             ),
           ),
         ),

@@ -24,10 +24,10 @@
     body {
       margin: 0;
       padding: 0;
-      background-color: #f5f5f7;
+      background-color: #0F1117;
     }
     .loading {
-      display: flex;
+      display: none;
       justify-content: center;
       align-items: center;
       height: 100vh;
@@ -37,9 +37,57 @@
       font-weight: 600;
     }
   </style>
+  <style>
+    body, html {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+  </style>
 </head>
-<body>
+<body oncontextmenu="return false;" onkeydown="return disableDevTools(event)">
   <div class="loading" id="loading">ashickey{}</div>
   <script src="flutter_bootstrap.js" async></script>
+  <script>
+    function disableDevTools(e) {
+      if(e.keyCode == 123) {
+        return false;
+      }
+      if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) {
+        return false;
+      }
+      if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) {
+        return false;
+      }
+      if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) {
+        return false;
+      }
+      if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) {
+        return false;
+      }
+    }
+
+    async function registerWebPush(publicVapidKey, apiUrl) {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      try {
+        const reg = await navigator.serviceWorker.register('sw.js');
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: publicVapidKey
+        });
+        
+        await fetch(apiUrl, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(sub)
+        });
+      } catch (e) {
+        console.error('Web Push registration failed:', e);
+      }
+    }
+  </script>
 </body>
 </html>

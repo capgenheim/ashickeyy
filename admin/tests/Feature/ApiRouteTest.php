@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Category;
 use App\Models\Post;
 use App\Models\Tag;
 use Tests\TestCase;
@@ -13,7 +12,6 @@ class ApiRouteTest extends TestCase
     {
         parent::setUp();
         Post::truncate();
-        Category::truncate();
         Tag::truncate();
     }
 
@@ -39,13 +37,7 @@ class ApiRouteTest extends TestCase
         $response->assertHeader('Cache-Control');
     }
 
-    public function test_can_fetch_public_categories()
-    {
-        $response = $this->get('/api/categories');
 
-        $response->assertStatus(200);
-        $response->assertJsonStructure(['categories']);
-    }
 
     public function test_can_fetch_public_tags()
     {

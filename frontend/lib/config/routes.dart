@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../screens/home_screen.dart';
 import '../screens/post_detail_screen.dart';
-import '../screens/category_screen.dart';
+import '../screens/tag_screen.dart';
 import '../screens/search_screen.dart';
 import '../screens/about_screen.dart';
 import '../widgets/nav_bar.dart';
@@ -34,18 +34,18 @@ final GoRouter appRouter = GoRouter(
           ),
         ),
         GoRoute(
-          path: '/categories',
+          path: '/tags',
           pageBuilder: (context, state) => CustomTransitionPage(
             key: state.pageKey,
-            child: const CategoryScreen(),
+            child: const TagScreen(),
             transitionsBuilder: _fadeTransition,
           ),
         ),
         GoRoute(
-          path: '/categories/:slug',
+          path: '/tags/:slug',
           pageBuilder: (context, state) => CustomTransitionPage(
             key: state.pageKey,
-            child: CategoryScreen(selectedSlug: state.pathParameters['slug']),
+            child: TagScreen(selectedSlug: state.pathParameters['slug']),
             transitionsBuilder: _fadeTransition,
           ),
         ),
@@ -55,6 +55,7 @@ final GoRouter appRouter = GoRouter(
             key: state.pageKey,
             child: SearchScreen(
               initialQuery: state.uri.queryParameters['q'],
+              initialTag: state.uri.queryParameters['tag'],
             ),
             transitionsBuilder: _fadeTransition,
           ),

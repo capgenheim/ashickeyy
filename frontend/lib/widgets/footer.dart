@@ -38,7 +38,10 @@ class AppFooter extends StatelessWidget {
               _FooterDot(colorScheme: colorScheme),
               _FooterLink(label: 'About', colorScheme: colorScheme),
               _FooterDot(colorScheme: colorScheme),
-              _FooterLink(label: 'Categories', colorScheme: colorScheme),
+              _FooterLink(
+                label: 'Tags',
+                colorScheme: colorScheme,
+              ),
             ],
           ),
           const SizedBox(height: 20),

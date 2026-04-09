@@ -21,7 +21,6 @@ class Post extends Model
         'content',
         'excerpt',
         'coverImage',
-        'category',
         'tags',
         'status',
         'publishedAt',
@@ -39,10 +38,6 @@ class Post extends Model
         'updated_at' => 'datetime',
     ];
 
-    public function categoryRef()
-    {
-        return $this->belongsTo(Category::class, 'category');
-    }
 
     public function scopePublished($query)
     {

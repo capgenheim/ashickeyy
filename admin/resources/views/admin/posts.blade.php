@@ -8,13 +8,11 @@
 
 <div class="card" style="padding:0;overflow:hidden;">
     <table>
-        <thead><tr><th>Title</th><th>Category</th><th>Status</th><th>Views</th><th>Date</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Title</th><th>Status</th><th>Views</th><th>Date</th><th>Actions</th></tr></thead>
         <tbody>
             @forelse($posts as $post)
-            @php $cat = $post->category ? \App\Models\Category::find($post->category) : null; @endphp
             <tr>
                 <td><strong>{{ $post->title }}</strong></td>
-                <td style="color:var(--text-muted)">{{ $cat?->name ?? '—' }}</td>
                 <td><span class="badge badge-{{ $post->status }}">{{ $post->status }}</span></td>
                 <td style="color:var(--text-muted)">{{ $post->views ?? 0 }}</td>
                 <td style="color:var(--text-muted)">{{ $post->created_at?->format('M d, Y') }}</td>
@@ -26,7 +24,7 @@
                 </td>
             </tr>
             @empty
-            <tr><td colspan="6" style="color:var(--text-muted)">No posts yet.</td></tr>
+            <tr><td colspan="5" style="color:var(--text-muted)">No posts yet.</td></tr>
             @endforelse
         </tbody>
     </table>

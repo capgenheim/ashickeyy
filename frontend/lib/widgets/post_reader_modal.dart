@@ -4,6 +4,8 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:html' as html;
 import '../models/post.dart';
 import '../services/api_service.dart';
@@ -31,11 +33,23 @@ class _PostReaderModalState extends State<PostReaderModal> {
   final ApiService _api = ApiService();
   Post? _post;
   bool _loading = true;
+  bool _markedAsRead = false;
 
   @override
   void initState() {
     super.initState();
     _fetchPost();
+  }
+
+  Future<void> _markAsRead() async {
+    if (_markedAsRead || _post == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final readList = prefs.getStringList('read_posts') ?? [];
+    if (!readList.contains(_post!.id)) {
+      readList.add(_post!.id);
+      await prefs.setStringList('read_posts', readList);
+    }
+    _markedAsRead = true;
   }
 
   Future<void> _fetchPost() async {
@@ -66,6 +80,13 @@ class _PostReaderModalState extends State<PostReaderModal> {
     });
   }
 
+  void _launchUrl(String urlString) async {
+    final uri = Uri.parse(urlString);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -75,7 +96,15 @@ class _PostReaderModalState extends State<PostReaderModal> {
       initialChildSize: 0.93,
       minChildSize: 0.5,
       maxChildSize: 0.97,
+      snap: true,
       builder: (_, controller) {
+        // Attach listener to mark as read when scrolling down
+        controller.addListener(() {
+          if (controller.position.pixels >= controller.position.maxScrollExtent * 0.6) {
+            _markAsRead();
+          }
+        });
+        
         return Container(
           decoration: BoxDecoration(
             color: colorScheme.surface,
@@ -236,16 +265,23 @@ class _PostReaderModalState extends State<PostReaderModal> {
                                         Wrap(
                                           spacing: 8,
                                           runSpacing: 8,
-                                          children: _post!.tags.map((tag) => Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                            decoration: BoxDecoration(
-                                              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                                              borderRadius: BorderRadius.circular(20),
-                                            ),
-                                            child: Text(
-                                              tag.name,
-                                              style: textTheme.bodySmall?.copyWith(
-                                                color: colorScheme.onSurfaceVariant,
+                                          children: _post!.tags.map((tag) => InkWell(
+                                            onTap: () {
+                                              Navigator.pop(context);
+                                              context.go('/tags/${tag.slug}');
+                                            },
+                                            borderRadius: BorderRadius.circular(20),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                              decoration: BoxDecoration(
+                                                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                                                borderRadius: BorderRadius.circular(20),
+                                              ),
+                                              child: Text(
+                                                '#${tag.name}',
+                                                style: textTheme.bodySmall?.copyWith(
+                                                  color: colorScheme.onSurfaceVariant,
+                                                ),
                                               ),
                                             ),
                                           )).toList(),
@@ -280,16 +316,57 @@ class _PostReaderModalState extends State<PostReaderModal> {
                                                 color: colorScheme.onSurfaceVariant,
                                               ),
                                             ),
-                                            const SizedBox(height: 16),
-                                            OutlinedButton.icon(
-                                              onPressed: _sharePost,
-                                              icon: const Icon(Icons.share_outlined, size: 16),
-                                              label: const Text('Share this story'),
-                                              style: OutlinedButton.styleFrom(
-                                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                                                side: BorderSide(color: colorScheme.outlineVariant),
-                                              ),
+                                            const SizedBox(height: 24),
+                                            Wrap(
+                                              spacing: 12,
+                                              runSpacing: 12,
+                                              alignment: WrapAlignment.center,
+                                              children: [
+                                                _SocialBtn(
+                                                  label: 'WhatsApp',
+                                                  color: const Color(0xFF25D366),
+                                                  icon: Icons.chat_bubble_outline,
+                                                  onTap: () {
+                                                    final url = '${html.window.location.origin}/post/${_post!.slug}';
+                                                    _launchUrl('https://api.whatsapp.com/send?text=${Uri.encodeComponent('Check out this post: $url')}');
+                                                  },
+                                                ),
+                                                _SocialBtn(
+                                                  label: 'Facebook',
+                                                  color: const Color(0xFF1877F2),
+                                                  icon: Icons.facebook,
+                                                  onTap: () {
+                                                    final url = '${html.window.location.origin}/post/${_post!.slug}';
+                                                    _launchUrl('https://www.facebook.com/sharer/sharer.php?u=${Uri.encodeComponent(url)}');
+                                                  },
+                                                ),
+                                                _SocialBtn(
+                                                  label: 'LinkedIn',
+                                                  color: const Color(0xFF0A66C2),
+                                                  icon: Icons.work_outline,
+                                                  onTap: () {
+                                                    final url = '${html.window.location.origin}/post/${_post!.slug}';
+                                                    _launchUrl('https://www.linkedin.com/sharing/share-offsite/?url=${Uri.encodeComponent(url)}');
+                                                  },
+                                                ),
+                                                _SocialBtn(
+                                                  label: 'Threads',
+                                                  color: Colors.white,
+                                                  textColor: Colors.black,
+                                                  icon: Icons.alternate_email,
+                                                  onTap: () {
+                                                    final url = '${html.window.location.origin}/post/${_post!.slug}';
+                                                    _launchUrl('https://threads.net/intent/post?text=${Uri.encodeComponent('Read this on ashickey{} $url')}');
+                                                  },
+                                                ),
+                                                _SocialBtn(
+                                                  label: 'More',
+                                                  color: colorScheme.surfaceContainerHighest,
+                                                  textColor: colorScheme.onSurface,
+                                                  icon: Icons.share,
+                                                  onTap: _sharePost,
+                                                ),
+                                              ],
                                             ),
                                           ],
                                         ),
@@ -306,6 +383,52 @@ class _PostReaderModalState extends State<PostReaderModal> {
                     ),
         );
       },
+    );
+  }
+}
+
+class _SocialBtn extends StatelessWidget {
+  final String label;
+  final Color color;
+  final Color? textColor;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _SocialBtn({
+    required this.label,
+    required this.color,
+    required this.icon,
+    required this.onTap,
+    this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: textColor ?? Colors.white),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: textColor ?? Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

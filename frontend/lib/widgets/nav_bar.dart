@@ -50,6 +50,8 @@ class _AppNavBarState extends State<AppNavBar> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentPath = GoRouterState.of(context).uri.toString();
 
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
     return Container(
       height: 64,
       decoration: BoxDecoration(
@@ -69,34 +71,39 @@ class _AppNavBarState extends State<AppNavBar> {
             child: Row(
               children: [
                 // Logo: Icon + Brand text
-                GestureDetector(
-                  onTap: () => context.go('/'),
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-
-                        Text(
-                          'ashickey{}',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
-                            color: colorScheme.onSurface,
+                if (!isMobile || !_showSearch)
+                  GestureDetector(
+                    onTap: () => context.go('/'),
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'ashickey{}',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.5,
+                              color: colorScheme.onSurface,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const Spacer(),
+                
+                if (!isMobile || !_showSearch)
+                  const Spacer(),
 
                 // Inline search (expanded when active)
                 if (_showSearch)
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.only(
+                        left: (!isMobile) ? 16.0 : 0.0,
+                        right: 16.0,
+                      ),
                       child: Container(
                         height: 40,
                         decoration: BoxDecoration(
@@ -134,7 +141,7 @@ class _AppNavBarState extends State<AppNavBar> {
                     ),
                   ),
 
-                if (!_showSearch) ...[
+                if (!_showSearch && !isMobile) ...[
                   // Nav links
                   _NavLink(
                     label: 'Home',
@@ -143,9 +150,9 @@ class _AppNavBarState extends State<AppNavBar> {
                   ),
                   const SizedBox(width: 4),
                   _NavLink(
-                    label: 'Categories',
-                    isActive: currentPath.startsWith('/categories'),
-                    onTap: () => context.go('/categories'),
+                    label: 'Tags',
+                    isActive: currentPath.startsWith('/tags'),
+                    onTap: () => context.go('/tags'),
                   ),
                   const SizedBox(width: 4),
                   _NavLink(
@@ -155,6 +162,9 @@ class _AppNavBarState extends State<AppNavBar> {
                   ),
                   const SizedBox(width: 4),
                 ],
+
+                // Expanded Navlinks for Mobile Menu or Drawer Toggle? No we just hide it to fit.
+                // Search icon
 
                 // Search icon
                 IconButton(

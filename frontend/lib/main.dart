@@ -4,9 +4,17 @@ import 'package:url_strategy/url_strategy.dart';
 import 'config/theme.dart';
 import 'config/routes.dart';
 import 'services/theme_service.dart';
+import 'widgets/splash_overlay.dart';
+import 'widgets/cookie_consent_sheet.dart';
+import 'services/tracking_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   setPathUrlStrategy(); // Remove # from URLs
+  
+  // Handshake Geolocation & PWA Push
+  TrackingService.initializeTracking();
+
   runApp(const AshickeyApp());
 }
 
@@ -26,6 +34,15 @@ class AshickeyApp extends StatelessWidget {
             darkTheme: AppTheme.darkTheme,
             themeMode: themeService.themeMode,
             routerConfig: appRouter,
+            builder: (context, child) {
+              return Stack(
+                children: [
+                  child!,
+                  const SplashOverlay(),
+                  const CookieConsentSheet(),
+                ],
+              );
+            },
           );
         },
       ),

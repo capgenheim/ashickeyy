@@ -45,7 +45,8 @@ class PostController extends Controller
         if ($tagSlug) {
             $tag = Tag::where('slug', $tagSlug)->first();
             if ($tag) {
-                $query->where('tags', (string) $tag->_id);
+                // Since tags are stored as stringified JSON arrays in some cases, use a LIKE query
+                $query->where('tags', 'like', '%' . (string) $tag->_id . '%');
             }
         }
 

@@ -19,6 +19,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        if (\Illuminate\Support\Facades\App::environment('production') || env('APP_ENV') !== 'local' || request()->header('x-forwarded-proto') === 'https') {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        } else {
+            // Just force it when in doubt for the proxy setup
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
     }
 }

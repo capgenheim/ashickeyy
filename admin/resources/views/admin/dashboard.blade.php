@@ -11,7 +11,7 @@
     <div class="stat-card"><div class="stat-value">{{ $stats['drafts'] }}</div><div class="stat-label">Drafts</div></div>
     <div class="stat-card"><div class="stat-value">{{ $stats['categories'] }}</div><div class="stat-label">Categories</div></div>
     <div class="stat-card"><div class="stat-value">{{ $stats['tags'] }}</div><div class="stat-label">Tags</div></div>
-    <div class="stat-card"><div class="stat-value">{{ number_format($stats['totalViews']) }}</div><div class="stat-label">Total Views</div></div>
+
 </div>
 
 <div class="card">

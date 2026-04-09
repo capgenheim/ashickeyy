@@ -6,8 +6,9 @@ import 'post_reader_modal.dart';
 class PostCard extends StatefulWidget {
   final Post post;
   final bool isFeatured;
+  final bool isRead;
 
-  const PostCard({super.key, required this.post, this.isFeatured = false});
+  const PostCard({super.key, required this.post, this.isFeatured = false, this.isRead = false});
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -80,10 +81,33 @@ class _PostCardState extends State<PostCard> {
                 children: [
                   // Text content
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Title
+                    child: Opacity(
+                      opacity: widget.isRead ? 0.6 : 1.0,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (widget.isRead) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              margin: const EdgeInsets.only(bottom: 8),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.check_circle_outline, size: 14, color: colorScheme.primary),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'You already read this post',
+                                    style: textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                          // Title
                         AnimatedDefaultTextStyle(
                           duration: const Duration(milliseconds: 150),
                           style: (widget.isFeatured
@@ -135,42 +159,30 @@ class _PostCardState extends State<PostCard> {
                                 fontSize: 13,
                               ),
                             ),
-                            if (widget.post.views > 0) ...[
-                              _MetaDot(color: colorScheme.onSurfaceVariant),
-                              Icon(
-                                Icons.bar_chart_rounded,
-                                size: 14,
-                                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                              ),
-                              const SizedBox(width: 3),
-                              Text(
-                                '${widget.post.views}',
-                                style: textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
                           ],
                         ),
                       ],
                     ),
                   ),
+                ),
 
-                  // Thumbnail placeholder (right side, Medium-style)
+                // Thumbnail placeholder (right side, Medium-style)
                   if (widget.post.coverImage.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(left: 24),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: SizedBox(
-                          width: widget.isFeatured ? 160 : 120,
-                          height: widget.isFeatured ? 120 : 80,
-                          child: Image.network(
-                            widget.post.coverImage,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: colorScheme.surfaceContainerHighest,
+                      child: Opacity(
+                        opacity: widget.isRead ? 0.6 : 1.0,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: SizedBox(
+                            width: widget.isFeatured ? 160 : 120,
+                            height: widget.isFeatured ? 120 : 80,
+                            child: Image.network(
+                              widget.post.coverImage,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: colorScheme.surfaceContainerHighest,
+                              ),
                             ),
                           ),
                         ),
@@ -179,7 +191,9 @@ class _PostCardState extends State<PostCard> {
                   else
                     Padding(
                       padding: const EdgeInsets.only(left: 24),
-                      child: Container(
+                      child: Opacity(
+                        opacity: widget.isRead ? 0.6 : 1.0,
+                        child: Container(
                         width: widget.isFeatured ? 160 : 120,
                         height: widget.isFeatured ? 120 : 80,
                         decoration: BoxDecoration(
@@ -202,6 +216,7 @@ class _PostCardState extends State<PostCard> {
                         ),
                       ),
                     ),
+                  ),
                 ],
               ),
             ],

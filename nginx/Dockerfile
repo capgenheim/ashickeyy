@@ -11,6 +11,7 @@ RUN flutter pub get
 
 # Copy source and build
 COPY frontend/ .
+RUN flutter clean && flutter pub get
 RUN flutter build web --release --web-renderer canvaskit
 
 # ============================================

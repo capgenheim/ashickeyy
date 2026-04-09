@@ -60,10 +60,9 @@
             <nav class="sidebar-nav">
                 <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">📊 Dashboard</a>
                 <a href="{{ route('admin.posts') }}" class="sidebar-link {{ request()->routeIs('admin.posts*') ? 'active' : '' }}">📝 Posts</a>
-                <a href="{{ route('admin.categories') }}" class="sidebar-link {{ request()->routeIs('admin.categories*') ? 'active' : '' }}">📁 Categories</a>
+
                 <a href="{{ route('admin.tags') }}" class="sidebar-link {{ request()->routeIs('admin.tags*') ? 'active' : '' }}">🏷️ Tags</a>
                 <a href="{{ route('admin.media') }}" class="sidebar-link {{ request()->routeIs('admin.media*') ? 'active' : '' }}">🖼️ Media</a>
-                <a href="{{ route('admin.analytics') }}" class="sidebar-link {{ request()->routeIs('admin.analytics*') ? 'active' : '' }}">📈 Analytics</a>
             </nav>
             <form method="POST" action="{{ route('admin.logout') }}" class="logout-form">
                 @csrf

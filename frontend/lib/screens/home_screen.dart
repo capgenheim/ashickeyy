@@ -5,7 +5,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../services/api_service.dart';
 import '../models/post.dart';
 import '../widgets/post_card.dart';
-import '../widgets/tag_carousel.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../widgets/hero_banner.dart';
 import '../widgets/shimmer_loader.dart';
 import '../widgets/footer.dart';
@@ -24,18 +25,38 @@ class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
 
   List<Post> _posts = [];
+  Set<String> _readPosts = {};
+  
+  List<Post> get _newPosts {
+    if (_posts.isEmpty) return [];
+    return _posts.where((p) => p.createdAt != null && DateTime.now().difference(p.createdAt!).inDays <= 7).take(5).toList();
+  }
+
+  List<Post> get _remainingPosts {
+    final newPostIds = _newPosts.map((p) => p.id).toSet();
+    return _posts.where((p) => !newPostIds.contains(p.id)).toList();
+  }
+
   bool _loading = true;
   bool _loadingMore = false;
   bool _hasMore = true;
   String? _cursor;
-  String? _selectedTag;
+
   bool _showScrollToTop = false;
 
   @override
   void initState() {
     super.initState();
+    _loadReadPosts();
     _fetchPosts();
     _scrollController.addListener(_onScroll);
+  }
+
+  Future<void> _loadReadPosts() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _readPosts = (prefs.getStringList('read_posts') ?? []).toSet();
+    });
   }
 
   @override
@@ -66,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchPosts() async {
     try {
-      final response = await _api.getPosts(tag: _selectedTag);
+      final response = await _api.getPosts();
       if (mounted) {
         setState(() {
           _posts = response.posts;
@@ -85,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _loadingMore = true);
 
     try {
-      final response = await _api.getPosts(cursor: _cursor, tag: _selectedTag);
+      final response = await _api.getPosts(cursor: _cursor);
       if (mounted) {
         setState(() {
           _posts.addAll(response.posts);
@@ -107,20 +128,11 @@ class _HomeScreenState extends State<HomeScreen> {
       _hasMore = true;
       _loading = true;
     });
+    await _loadReadPosts(); // Re-sync read posts on refresh
     await _fetchPosts();
   }
 
-  void _onTagSelected(String? slug) {
-    if (_selectedTag == slug) return;
-    setState(() {
-      _selectedTag = slug;
-      _posts = [];
-      _cursor = null;
-      _hasMore = true;
-      _loading = true;
-    });
-    _fetchPosts();
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -174,37 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // Main content
-            SliverToBoxAdapter(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 700),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: isDesktop ? 0 : 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 8),
 
-                        // Tag tabs
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: TagCarousel(
-                            selectedSlug: _selectedTag,
-                            onTagSelected: _onTagSelected,
-                          ),
-                        ),
-
-                        Divider(
-                          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-                          height: 1,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
 
             // Loading state
             if (_loading)
@@ -229,8 +211,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: _buildEmptyState(colorScheme, textTheme),
               ),
 
-            // Highlighted new posts (first 5)
-            if (!_loading && _posts.isNotEmpty && _selectedTag == null)
+            // Highlighted new posts (max 5, within 7 days)
+            if (!_loading && _newPosts.isNotEmpty)
               SliverToBoxAdapter(
                 child: Center(
                   child: ConstrainedBox(
@@ -266,9 +248,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ).animate().fadeIn(duration: 400.ms),
 
-                          // First 5 posts highlighted
+                          // New posts highlighted (up to 5)
                           ...List.generate(
-                            _posts.length < 5 ? _posts.length : 5,
+                            _newPosts.length,
                             (index) => Column(
                               children: [
                                 AnimatedListItem(
@@ -288,8 +270,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ? const EdgeInsets.only(left: 12)
                                         : EdgeInsets.zero,
                                     child: PostCard(
-                                      post: _posts[index],
+                                      post: _newPosts[index],
                                       isFeatured: index == 0,
+                                      isRead: _readPosts.contains(_newPosts[index].id),
                                     ),
                                   ),
                                 ),
@@ -308,7 +291,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
             // Remaining posts
-            if (!_loading && _posts.length > 5 && _selectedTag == null)
+            if (!_loading && _remainingPosts.isNotEmpty)
               SliverToBoxAdapter(
                 child: Center(
                   child: ConstrainedBox(
@@ -333,14 +316,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             height: 1,
                           ),
                           ...List.generate(
-                            _posts.length - 5,
-                            (i) {
-                              final index = i + 5;
+                            _remainingPosts.length,
+                            (index) {
                               return Column(
                                 children: [
                                   AnimatedListItem(
-                                    index: index,
-                                    child: PostCard(post: _posts[index]),
+                                    index: index + _newPosts.length,
+                                    child: PostCard(
+                                      post: _remainingPosts[index],
+                                      isRead: _readPosts.contains(_remainingPosts[index].id),
+                                    ),
                                   ),
                                   Divider(
                                     color: colorScheme.outlineVariant.withValues(alpha: 0.2),
@@ -357,36 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-            // Tag-filtered posts (no highlight split)
-            if (!_loading && _posts.isNotEmpty && _selectedTag != null)
-              SliverToBoxAdapter(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 700),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 0 : 24),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _posts.length,
-                        separatorBuilder: (context, index) => Divider(
-                          color: colorScheme.outlineVariant.withValues(alpha: 0.2),
-                          height: 1,
-                        ),
-                        itemBuilder: (context, index) {
-                          return AnimatedListItem(
-                            index: index,
-                            child: PostCard(
-                              post: _posts[index],
-                              isFeatured: index == 0,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+
 
             // Loading more indicator
             if (_loadingMore)
