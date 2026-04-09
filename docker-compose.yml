@@ -21,6 +21,18 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: ashickey-redis
+    restart: unless-stopped
+    networks:
+      - ashickey-internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   admin:
     build:
       context: ./admin
@@ -46,6 +58,8 @@ services:
       MAIL_ENCRYPTION: ${MAIL_ENCRYPTION}
       MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME}
+      QUEUE_CONNECTION: ${QUEUE_CONNECTION}
+      REDIS_HOST: ${REDIS_HOST}
     volumes:
       - ./uploads:/app/public/uploads
     depends_on:
@@ -58,6 +72,37 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
+
+  worker:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    container_name: ashickey-worker
+    restart: unless-stopped
+    command: php artisan queue:work redis --sleep=3 --tries=3 --timeout=90
+    environment:
+      MONGODB_URI: mongodb://${MONGO_DB_USER}:Mohd-Ashraf-Azmi%409@mongo:27017/${MONGO_DB_NAME}?authSource=${MONGO_DB_NAME}
+      APP_URL: http://localhost
+      APP_KEY: base64:aWg2cW96ZmZxbzBiaW12ZmtyeXBxczQzOGR4bzBycWo=
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      MAIL_MAILER: ${MAIL_MAILER}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_ENCRYPTION: ${MAIL_ENCRYPTION}
+      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME}
+      QUEUE_CONNECTION: ${QUEUE_CONNECTION}
+      REDIS_HOST: ${REDIS_HOST}
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ashickey-internal
 
   nginx:
     build:

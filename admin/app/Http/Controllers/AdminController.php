@@ -126,23 +126,9 @@ class AdminController extends Controller
     private function dispatchEmailNotification(string $title, string $slug, string $excerpt, string $coverImage)
     {
         try {
-            $mongo = new \MongoDB\Client(env('DB_DSN', 'mongodb://ashickey-mongo:27017'));
-            $collection = $mongo->ashickey->email_subscriptions;
-            $subs = $collection->find([]);
-
-            $emails = [];
-            foreach ($subs as $sub) {
-                if (!empty($sub['email'])) {
-                    $emails[] = $sub['email'];
-                }
-            }
-
-            if (!empty($emails)) {
-                \Illuminate\Support\Facades\Mail::to($emails)
-                    ->send(new \App\Mail\NewPostMail($title, $slug, $excerpt, $coverImage));
-            }
+            \App\Jobs\BlastEmailJob::dispatch($title, $slug, $excerpt, $coverImage);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Mail Dispatch Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Redis BlastEmailJob Error: ' . $e->getMessage());
         }
     }
 
