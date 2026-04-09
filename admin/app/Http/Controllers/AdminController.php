@@ -53,12 +53,21 @@ class AdminController extends Controller
 
     public function dashboard()
     {
+        $db = (new \MongoDB\Client(env('DB_DSN', 'mongodb://ashickey-mongo:27017')))->ashickey;
+        $analytics = $db->visitor_analytics;
+        $totalReaders = $analytics->countDocuments(['action' => 'actual_reader']);
+        $totalViews = $analytics->countDocuments(['action' => 'just_view']);
+        $totalOpens = $analytics->countDocuments(['action' => 'app_open']);
+
         $stats = [
             'posts' => Post::count(),
             'published' => Post::where('status', 'published')->count(),
             'drafts' => Post::where('status', 'draft')->count(),
             'categories' => Category::count(),
             'tags' => Tag::count(),
+            'readers' => $totalReaders,
+            'views' => $totalViews,
+            'app_opens' => $totalOpens,
         ];
         $recentPosts = Post::orderBy('created_at', 'desc')->limit(5)->get();
 
