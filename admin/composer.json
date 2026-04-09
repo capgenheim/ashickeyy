@@ -8,9 +8,10 @@
     "require": {
         "php": "^8.3",
         "jenssegers/agent": "^2.6",
-        "laravel/framework": "^13.0",
+        "laravel/framework": "^11.0",
         "laravel/tinker": "^3.0",
-        "livewire/livewire": "^4.2",
+        "livewire/livewire": "^3.5",
+        "filament/filament": "^3.2",
         "mongodb/laravel-mongodb": "^5.7",
         "stevebauman/location": "^7.6"
     },
@@ -53,7 +54,8 @@
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi"
+            "@php artisan package:discover --ansi",
+            "@php artisan filament:upgrade"
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force"

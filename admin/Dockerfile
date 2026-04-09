@@ -9,10 +9,11 @@ RUN apk add --no-cache \
     g++ \
     make \
     openssl-dev \
-    linux-headers
+    linux-headers \
+    icu-dev
 
 RUN pecl install mongodb && docker-php-ext-enable mongodb
-RUN docker-php-ext-install zip pcntl
+RUN docker-php-ext-install zip pcntl intl
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
